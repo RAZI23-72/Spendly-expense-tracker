@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | Ledger{% endblock %}
+
+{% block content %}
+<section class="empty-state page-error">
+    <div class="empty-icon">?</div>
+    <h1>Page not found</h1>
+    <p>The page you requested does not exist.</p>
+    <a class="button button-primary" href="{{ url_for('main.dashboard') }}">
+        Return to dashboard
+    </a>
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% if income %}
+    {% set page_title = "Edit income" %}
+{% else %}
+    {% set page_title = "Add income" %}
+{% endif %}
+
+{% block title %}{{ page_title }} | Ledger{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="form-heading">
+        <p class="eyebrow">Income entry</p>
+        <h1>{{ page_title }}</h1>
+        <p>Record money coming in — salary, freelance, bonuses, etc.</p>
+    </div>
+
+    <form class="expense-form" method="POST">
+        <div class="form-row">
+            <div class="form-field form-field-wide">
+                <label for="title">Income name</label>
+                <input id="title" name="title" type="text" maxlength="120"
+                       placeholder="Monthly salary"
+                       value="{{ form.get('title', income.title if income else '') }}"
+                       required>
+            </div>
+
+            <div class="form-field">
+                <label for="amount">Amount</label>
+                <div class="input-prefix">
+                    <span>₹</span>
+                    <input id="amount" name="amount" type="number"
+                           step="0.01" min="0.01" placeholder="0.00"
+                           value="{{ form.get('amount', income.amount if income else '') }}"
+                           required>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="source">Source</label>
+                <select id="source" name="source" required>
+                    <option value="">Select a source</option>
+                    {% for source in sources %}
+                        <option value="{{ source }}"
+                            {% if form and form.get('source') == source %}selected
+                            {% elif income and income.source == source %}selected{% endif %}>
+                            {{ source }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="income_date">Date</label>
+                <input id="income_date" name="income_date" type="date"
+                       value="{{ form.get('income_date', income.income_date.isoformat() if income else '') }}"
+                       required>
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label for="notes">Notes <span>(optional)</span></label>
+            <textarea id="notes" name="notes" rows="4" maxlength="500"
+                      placeholder="Add a note about this income">{{ form.get('notes', income.notes if income and income.notes else '') }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <a class="button button-ghost" href="{{ url_for('main.dashboard') }}">Cancel</a>
+            <button class="button button-primary" type="submit">
+                {{ "Update income" if income else "Save income" }}
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

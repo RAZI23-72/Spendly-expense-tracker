@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Ledger{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">Personal finance</p>
+        <h1>Your spending, clearly tracked.</h1>
+        <p class="hero-copy">
+            Keep your daily expenses organized and understand where your money goes.
+        </p>
+    </div>
+
+    <form class="month-picker" method="GET">
+        <label for="month">Viewing</label>
+        <input
+            id="month"
+            name="month"
+            type="month"
+            value="{{ selected_month }}"
+            onchange="this.form.submit()"
+        >
+    </form>
+</section>
+
+<!-- ============ SUMMARY CARDS ============ -->
+<section class="summary-grid">
+    <article class="summary-card summary-card-dark">
+        <span class="summary-label">{{ selected_month_label }}</span>
+        <strong
+            class="{{ 'positive' if balance >= 0 else 'negative' }}"
+            data-value="{{ balance }}"
+            data-mode="signed"
+        >
+            {{ '+' if balance >= 0 else '' }}₹{{ "%.2f"|format(balance) }}
+        </strong>
+        <span class="summary-caption">Balance (income − expenses)</span>
+    </article>
+
+    <article class="summary-card summary-card-income">
+        <span class="summary-label">Income</span>
+        <strong class="positive" data-value="{{ monthly_income }}" data-mode="plus">
+            +₹{{ "%.2f"|format(monthly_income) }}
+        </strong>
+        <span class="summary-caption">{{ incomes|length }} entries this month</span>
+    </article>
+
+    <article class="summary-card summary-card-expense">
+        <span class="summary-label">Expenses</span>
+        <strong class="negative" data-value="{{ monthly_expenses }}" data-mode="minus">
+            -₹{{ "%.2f"|format(monthly_expenses) }}
+        </strong>
+        <span class="summary-caption">{{ expenses|length }} transactions</span>
+    </article>
+
+    <article class="summary-card">
+        <span class="summary-label">All-time balance</span>
+        <strong
+            class="{{ 'positive' if all_time_balance >= 0 else 'negative' }}"
+            data-value="{{ all_time_balance }}"
+            data-mode="signed"
+        >
+            {{ '+' if all_time_balance >= 0 else '' }}₹{{ "%.2f"|format(all_time_balance) }}
+        </strong>
+        <span class="summary-caption">
+            +₹{{ "%.2f"|format(all_time_income) }} in / -₹{{ "%.2f"|format(all_time_expenses) }} out
+        </span>
+    </article>
+</section>
+
+<div class="content-grid">
+    <!-- ============ EXPENSES PANEL ============ -->
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Activity</p>
+                <h2>{{ selected_month_label }}</h2>
+            </div>
+            <span class="count-badge">{{ expenses|length }}</span>
+        </div>
+
+        {% if expenses %}
+            <div class="expense-list">
+                {% for expense in expenses %}
+                    <article class="expense-row">
+                        <div class="expense-icon">{{ expense.category[0] }}</div>
+
+                        <div class="expense-info">
+                            <strong>{{ expense.title }}</strong>
+                            <span>
+                                {{ expense.category }}
+                                ·
+                                {{ expense.expense_date.strftime("%b %d, %Y") }}
+                            </span>
+                            {% if expense.notes %}
+                                <small>{{ expense.notes }}</small>
+                            {% endif %}
+                        </div>
+
+                        <strong class="expense-amount">
+                            -₹{{ "%.2f"|format(expense.amount) }}
+                        </strong>
+
+                        <div class="expense-actions">
+                            <a href="{{ url_for('main.edit_expense', expense_id=expense.id) }}">
+                                Edit
+                            </a>
+                            <form
+                                class="delete-form"
+                                method="POST"
+                                action="{{ url_for('main.delete_expense', expense_id=expense.id) }}"
+                                data-confirm-title="Delete this expense?"
+                                data-confirm-message="&quot;{{ expense.title }}&quot; will be removed for good."
+                            >
+                                <button type="submit">Delete</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">₹</div>
+                <h3>No expenses yet</h3>
+                <p>Add your first expense for {{ selected_month_label }}.</p>
+                <a class="button button-primary" href="{{ url_for('main.create_expense') }}">
+                    Add an expense
+                </a>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- ============ CATEGORY SIDEBAR ============ -->
+    <aside class="panel category-panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Breakdown</p>
+                <h2>By category</h2>
+            </div>
+        </div>
+
+        {% if category_totals %}
+            <div class="category-list">
+                {% for category, total in category_totals %}
+                    <div class="category-item">
+                        <div class="category-line">
+                            <span>{{ category }}</span>
+                            <strong>₹{{ "%.2f"|format(total) }}</strong>
+                        </div>
+                        <div class="progress-track">
+                            <div
+                                class="progress-bar"
+                                style="--progress-width: {{ (total / monthly_expenses * 100) if monthly_expenses else 0 }}%;"
+                            ></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">Category data will appear here after you add expenses.</p>
+        {% endif %}
+    </aside>
+</div>
+
+<!-- ============ INCOME PANEL ============ -->
+<section class="panel income-panel">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Money in</p>
+            <h2>Income — {{ selected_month_label }}</h2>
+        </div>
+        <a class="button button-primary" href="{{ url_for('main.create_income') }}">
+            + Add income
+        </a>
+    </div>
+
+    {% if incomes %}
+        <div class="expense-list">
+            {% for income in incomes %}
+                <article class="expense-row">
+                    <div class="expense-icon income-icon">↑</div>
+
+                    <div class="expense-info">
+                        <strong>{{ income.title }}</strong>
+                        <span>
+                            {{ income.source }}
+                            ·
+                            {{ income.income_date.strftime("%b %d, %Y") }}
+                        </span>
+                        {% if income.notes %}
+                            <small>{{ income.notes }}</small>
+                        {% endif %}
+                    </div>
+
+                    <strong class="expense-amount income-amount">
+                        +₹{{ "%.2f"|format(income.amount) }}
+                    </strong>
+
+                    <div class="expense-actions">
+                        <a href="{{ url_for('main.edit_income', income_id=income.id) }}">
+                            Edit
+                        </a>
+                        <form
+                            class="delete-form"
+                            method="POST"
+                            action="{{ url_for('main.delete_income', income_id=income.id) }}"
+                            data-confirm-title="Delete this income?"
+                            data-confirm-message="&quot;{{ income.title }}&quot; will be removed for good."
+                        >
+                            <button type="submit">Delete</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon income-icon">↑</div>
+            <h3>No income yet</h3>
+            <p>Add your salary for {{ selected_month_label }}.</p>
+            <a class="button button-primary" href="{{ url_for('main.create_income') }}">
+                Add income
+            </a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

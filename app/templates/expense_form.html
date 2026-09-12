@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% if expense %}
+    {% set page_title = "Edit expense" %}
+{% else %}
+    {% set page_title = "Add expense" %}
+{% endif %}
+
+{% block title %}{{ page_title }} | Ledger{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="form-heading">
+        <p class="eyebrow">Ledger entry</p>
+        <h1>{{ page_title }}</h1>
+        <p>Capture the details so your spending history stays accurate.</p>
+    </div>
+
+    <form class="expense-form" method="POST">
+        <div class="form-row">
+            <div class="form-field form-field-wide">
+                <label for="title">Expense name</label>
+                <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    maxlength="120"
+                    placeholder="Coffee with team"
+                    value="{{ form.get('title', expense.title if expense else '') }}"
+                    required
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="amount">Amount</label>
+                <div class="input-prefix">
+                    <span>₹</span>
+                    <input
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="0.00"
+                        value="{{ form.get('amount', expense.amount if expense else '') }}"
+                        required
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="">Select a category</option>
+                    {% for category in categories %}
+                        <option
+                            value="{{ category }}"
+                            {% if form and form.get('category') == category %}
+                                selected
+                            {% elif expense and expense.category == category %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ category }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="expense_date">Date</label>
+                <input
+                    id="expense_date"
+                    name="expense_date"
+                    type="date"
+                    value="{{ form.get('expense_date', expense.expense_date.isoformat() if expense else '') }}"
+                    required
+                >
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label for="notes">Notes <span>(optional)</span></label>
+            <textarea
+                id="notes"
+                name="notes"
+                rows="4"
+                maxlength="500"
+                placeholder="Add a note about this expense"
+            >{{ form.get('notes', expense.notes if expense and expense.notes else '') }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <a class="button button-ghost" href="{{ url_for('main.dashboard') }}">
+                Cancel
+            </a>
+            <button class="button button-primary" type="submit">
+                {{ "Update expense" if expense else "Save expense" }}
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
